@@ -1,0 +1,97 @@
+//
+//  Constants.swift.template
+//  Vitality
+//
+//  Created by Claude on 2026-01-30.
+//
+//  INSTRUCTIONS:
+//  1. Copy this file and rename it to Constants.swift
+//  2. Replace "your-api-key-here" with your actual Claude API key
+//  3. Never commit Constants.swift to version control!
+//
+
+import SwiftUI
+
+enum VitalityTheme {
+    // MARK: - Colors
+    static let primary = Color("SageGreen")
+    static let secondary = Color("WarmCream")
+    static let accent = Color("NavyBlue")
+    static let success = Color("HealthGreen")
+    static let warning = Color("GentleAmber")
+    static let background = Color("AppBackground")
+    static let cardBackground = Color("CardBackground")
+
+    // Fallback colors for when assets aren't loaded
+    static let primaryFallback = Color(red: 0.56, green: 0.74, blue: 0.56) // #8FBC8F
+    static let secondaryFallback = Color(red: 1.0, green: 0.97, blue: 0.86) // #FFF8DC
+    static let accentFallback = Color(red: 0.12, green: 0.23, blue: 0.37) // #1E3A5F
+    static let successFallback = Color(red: 0.30, green: 0.69, blue: 0.31) // #4CAF50
+    static let warningFallback = Color(red: 1.0, green: 0.72, blue: 0.30) // #FFB74D
+
+    // MARK: - Typography
+    enum Typography {
+        static let largeTitle = Font.system(.largeTitle, design: .rounded, weight: .bold)
+        static let title = Font.system(.title2, design: .rounded, weight: .semibold)
+        static let headline = Font.system(.headline, design: .rounded, weight: .medium)
+        static let body = Font.system(.body, design: .rounded)
+        static let caption = Font.system(.caption, design: .rounded)
+        static let metric = Font.system(size: 34, weight: .bold, design: .rounded)
+        static let smallMetric = Font.system(size: 24, weight: .bold, design: .rounded)
+    }
+
+    // MARK: - Spacing
+    enum Spacing {
+        static let xs: CGFloat = 4
+        static let sm: CGFloat = 8
+        static let md: CGFloat = 16
+        static let lg: CGFloat = 24
+        static let xl: CGFloat = 32
+        static let xxl: CGFloat = 48
+    }
+
+    // MARK: - Corner Radius
+    enum Radius {
+        static let small: CGFloat = 8
+        static let medium: CGFloat = 16
+        static let large: CGFloat = 24
+        static let card: CGFloat = 20
+    }
+
+    // MARK: - Animation
+    enum Animation {
+        static let spring = SwiftUI.Animation.spring(response: 0.4, dampingFraction: 0.8)
+        static let quickSpring = SwiftUI.Animation.spring(response: 0.2, dampingFraction: 0.6)
+        static let smoothSpring = SwiftUI.Animation.spring(response: 0.6, dampingFraction: 0.7)
+        static let gentleSpring = SwiftUI.Animation.spring(response: 0.8, dampingFraction: 0.7)
+    }
+}
+
+// MARK: - App Constants
+enum AppConstants {
+    static let minimumTouchTarget: CGFloat = 44
+    static let quickActionButtonHeight: CGFloat = 80
+    static let cardImageHeight: CGFloat = 200
+    static let profileImageSize: CGFloat = 40
+
+    // Nutrition Targets (these are defaults, will be personalized per user)
+    static let defaultCalorieTarget = 2000
+    static let defaultProteinTarget = 150 // grams
+    static let defaultCarbsTarget = 250
+    static let defaultFatTarget = 65
+    static let defaultFiberTarget = 30
+    static let defaultSodiumLimit = 2300 // mg
+    static let defaultCholesterolLimit = 300 // mg
+
+    // Activity Targets
+    static let defaultStepGoal = 10000
+    static let defaultActiveCalorieGoal = 400
+    static let defaultExerciseMinuteGoal = 30
+}
+
+// MARK: - API Keys
+enum APIKeys {
+    // TODO: Replace with your actual Claude API key from https://console.anthropic.com/
+    // IMPORTANT: In production, use the Keychain to store this securely!
+    static let claudeAPIKey = "your-api-key-here"
+}
