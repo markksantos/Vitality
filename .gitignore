@@ -144,3 +144,7 @@ Package.resolved
 *.swp
 *.bak
 *.tmp
+
+# Never track a credential file again
+APIKeys.swift
+**/APIKeys.swift
