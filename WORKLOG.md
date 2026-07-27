@@ -95,3 +95,95 @@ TODO is stale and should not be trusted as a status report.
   would have shipped in any build made from this tree.
 - Decide the AI cost model above before this can be marketed as "AI-powered".
 - Apple Developer Program membership.
+
+---
+
+## Second pass — the nutrition maths
+
+The first pass fixed the hardcoded API key and left the app with no tests. There
+are now 32, and writing them found three real bugs.
+
+### The calorie calculation existed twice, and the copies disagreed
+
+`OnboardingContainerView.calculateTargets` and `ProfileView.recalculateTargets`
+both derived every target from height, weight, age, activity and goal. They had
+drifted:
+
+| | Onboarding | Profile editor |
+|---|---|---|
+| Muscle-building floor | `max(target, 2500)` | none |
+| Weight-loss protein | 0.9 g/lb | 0.8 g/lb |
+| Weight-loss macro split | 35% carbs / 30% fat | 45% / 30% |
+| Fibre, sodium, cholesterol | set from health conditions | never touched |
+
+So opening the profile editor and saving without changing a single input moved
+your targets — and left the sodium and cholesterol limits at whatever they had
+been rather than at what your conditions imply. Neither copy could be tested,
+because both were private methods on SwiftUI views.
+
+There is now one implementation, `NutritionTargetCalculator` in
+`Models/NutritionTargets.swift`, a pure function over the inputs, with
+`UserProfile.recalculateNutritionTargets()` as the single call site for both
+views.
+
+### A weight-loss target could land under 800 kcal/day
+
+A deficit was a flat 500 kcal off maintenance with no lower bound. For a small,
+older, sedentary person maintenance is around 1300, so the app would have shown
+a daily target of roughly 800 — and a nutrition app displaying that is doing
+harm, quite apart from App Review guideline 1.4.1.
+
+Two floors now: an absolute 1200, and the person's own resting metabolic rate,
+so a "deficit" can never be less than what the body burns doing nothing. A test
+sweeps weight 40–130 kg × four ages × every activity level and asserts the
+invariant holds throughout.
+
+The BMR floor was written as `Int(bmr)` first. `Int(2152.5)` is 2152, which is
+below the rate it is meant to floor — the guard missed by a calorie in exactly
+the cases where it was the guard that mattered, and the sweep caught it. It
+rounds up now.
+
+### Choosing "Weight Loss" instead of "Lose weight" did nothing
+
+`HealthGoal` carries three synonym pairs — `loseWeight`/`weightLoss`,
+`buildMuscle`/`muscleGain`, `eatHealthier`/`healthyEating` — and the onboarding
+picker listed `allCases`, so the user was shown the same goal twice, worded
+slightly differently, and asked to pick one. The calculation switched only on
+`loseWeight` and `buildMuscle`, so picking either of the other names silently
+produced maintenance calories.
+
+Goals now map to a `CalorieIntent`, so the synonyms behave identically, and the
+picker reads `HealthGoal.selectable`, which drops the duplicates. The cases stay
+in the enum because a stored profile may hold one.
+
+### Also
+
+- **The hero screenshot showed a flat 2,000 kcal.** `ScreenshotMode` seeded a
+  profile but never ran the calculation onboarding would have run, so the
+  marketing shot displayed the generic default rather than what the fixture's
+  body actually implies. It now shows 2,699 / 140 g / 303 g. All five captures
+  and the app preview were re-rendered.
+
+## Known limitation, deliberately not fixed here
+
+**Mifflin-St Jeor's `+5` constant is the male form.** The female form is `-161`,
+a 166 kcal difference before the activity multiplier compounds it. Vitality has
+no biological sex field, so the calculator uses the male constant for everyone
+and over-estimates for roughly half its users.
+
+Fixing it properly is a field in onboarding, a property on `UserProfile`, and
+one branch in the formula — a product change rather than a bug fix, and one that
+should be a decision rather than something slipped in. It is documented at the
+call site and in `appstore/METADATA.md` rather than left silent.
+
+## Still blocked on Mark
+
+- **The AI cost model.** Bring-your-own-key ships today and is honest, but it is
+  a wall most consumers will not climb. `AIEndpoint` is the seam for a hosted
+  proxy funded by a subscription. This decides the listing copy, so it should be
+  settled before the App Store Connect record exists.
+- **Rotate the Anthropic key** that was previously hardcoded.
+- **The deployment target is iOS 26.1**, which excludes every device that has
+  not updated. Deliberate — the UI is built on Liquid Glass — but it should be a
+  launch decision rather than a default.
+- **Apple Developer Program membership.**

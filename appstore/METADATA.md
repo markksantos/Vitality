@@ -173,10 +173,22 @@ the newest OS. That is a deliberate consequence of building on Liquid Glass, but
 it should be a conscious launch decision rather than a default. Lowering it is not
 trivial — the UI depends on APIs that do not exist earlier.
 
-### 3. The usual
+### 3. The BMR formula uses the male constant for everyone
+
+Mifflin-St Jeor takes `+5` for males and `-161` for females, a 166 kcal
+difference on the resting rate before the activity multiplier compounds it.
+Vitality has no biological sex field, so `NutritionTargetCalculator` uses the
+male constant unconditionally and over-estimates for roughly half of its users.
+
+That is a product gap, not an arithmetic one — the fix is a field in onboarding
+and one branch in the formula — but a nutrition app that shows a calorie target
+should not be quietly wrong for half the people it shows it to. Either add the
+field or say so in the app.
+
+### 4. The usual
 
 - [ ] Rotate the Anthropic key that was previously hardcoded (`sk-ant-…jAAA`)
 - [ ] Apple Developer Program membership
 - [ ] Create the App Store Connect record
 - [ ] Deploy the three nosleeplab pages so the URLs above resolve
-- [ ] Write real tests — `VitalityTests.swift` is still the Xcode template stub
+- [ ] Decide whether to add a biological sex field to onboarding (section 3 above)
