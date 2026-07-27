@@ -148,3 +148,8 @@ Package.resolved
 # Never track a credential file again
 APIKeys.swift
 **/APIKeys.swift
+
+# Marketing: raw captures and renders regenerate; framed store assets are committed
+marketing/shots/
+marketing/clips/
+marketing/out/
