@@ -68,6 +68,7 @@ nutrition,calorie counter,macros,pantry,meal tracker,food diary,protein,fitness,
 |---|---|
 | Support URL | https://nosleeplab.com/vitality/support |
 | Marketing URL | https://nosleeplab.com/apps/vitality |
+| Copyright | 2026 Mark Studios LLC |
 | Privacy Policy URL | https://nosleeplab.com/vitality/privacy |
 
 ## In-App Purchase
