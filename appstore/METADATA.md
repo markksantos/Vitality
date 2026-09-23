@@ -96,7 +96,7 @@ Purchases before submitting the first build, then attach it to the version
 | Availability | All storefronts the app is in |
 | Display name (30 max) | `Vitality Pro` (12) |
 | Description (45 max) | `Unlimited pantry, month and 3-month trends` (42) |
-| Review screenshot | the paywall — `ProPaywallView` (Settings → Vitality Pro → Upgrade to Pro). A capture is in the overnight kit: `iap-review-paywall.png` |
+| Review screenshot | the paywall — `ProPaywallView` (Settings → Vitality Pro → Upgrade to Pro). Capture it on the simulator or device on submission day; `ScreenshotMode` has no `paywall` screen, so the capture script cannot reach it without a tap |
 | Review notes | `Non-consumable. Unlocks unlimited pantry items (free tier: 25) and the Month / 3 Months analytics windows (Week is always free). Paywall: Settings > Vitality Pro > Upgrade to Pro, or add a 26th pantry item, or tap Month in Analytics. Restore Purchase is in the paywall and in Settings.` |
 
 What the binary actually gates (`Services/ProManager.swift`):
