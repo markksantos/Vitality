@@ -56,7 +56,7 @@ Everything above is free, with no account and no trial clock. The pantry holds u
 Vitality Pro is a single one-time purchase — not a subscription, nothing renews. It lifts the pantry limit and adds the month and three-month trend windows. It is shared with your Family Sharing group and restores on any device signed in to your Apple Account.
 
 OPTIONAL AI, ON YOUR TERMS
-Photo scanning, pantry scanning and recipe suggestions run on Anthropic's API using a key you supply in Settings. It is stored in your device's Keychain, is sent only to Anthropic, and never reaches us. We do not resell it, meter it, or mark it up — you pay Anthropic directly for exactly what you use, and you can remove the key at any time.
+Photo scanning, pantry scanning, recipe suggestions and the Home-screen insights run on Anthropic's API using a key you supply in Settings. With a key set, the insights refresh on their own once two meals are logged in a day, and they use your recent meals, workouts, goal and any health conditions you entered. It is stored in your device's Keychain, is sent only to Anthropic, and never reaches us. We do not resell it, meter it, or mark it up — you pay Anthropic directly for exactly what you use, and you can remove the key at any time.
 
 The AI features are not part of Vitality Pro, and every other feature — logging, the pantry, fitness, analytics — works with no key at all.
 
@@ -117,11 +117,25 @@ Data collection: **none**. Answer "No" to "Do you or your third-party partners
 collect data from this app?" — no analytics, no accounts, no advertising
 identifier, and no server of ours.
 
-Declare the Anthropic call honestly in review notes (below): meal and pantry
-photos are transmitted to Anthropic's API for analysis when the user has supplied
-their own key and taps to scan. That is a user-initiated transmission to a third
-party the user has their own contract with, not collection by us — but it must be
-described rather than omitted.
+Declare the Anthropic call honestly in review notes (below). **Corrected
+2026-09-23 against the code:** it is not only "photos when the user taps to scan".
+With a user-supplied key:
+- meal and pantry photos are sent when the user scans (`AIService.analyzeMealPhoto`);
+- recipe suggestions send the profile's goal and self-reported health conditions
+  (`AIService.swift:140-153`, `:221`);
+- **Home insights are sent automatically, without a tap**, whenever Home loads with
+  2+ meals logged today (`HomeDashboardView.swift:313-324` → `generateInsights`,
+  `AIService.swift:276-297`): recent meal totals, recent workouts, goal and health
+  conditions.
+
+> **DECISION FOR MARK — the App Privacy answer.** "No, we do not collect data" is
+> defensible only on the reading that a user-keyed call to a provider the user
+> contracts with is not collection by the developer. Apple's definition turns on
+> data leaving the device to a third party. The cautious answer is: *Health &
+> Fitness*, *Photos*, *Other User Content* — collected, **not** linked to the user,
+> **not** used for tracking, purpose App Functionality. Pick one before creating the
+> record; the privacy-policy draft (overnight kit `legal/Vitality/privacy.html`)
+> describes the flows either way.
 
 **Open Food Facts**: barcode lookups (`BarcodeScannerView.swift` →
 `world.openfoodfacts.org/api/v2/product/<barcode>.json`) and food search
@@ -144,10 +158,11 @@ Export compliance: no encryption beyond what iOS provides — answer "No".
 ```
 No account, no sign-in. The app opens into a five-step onboarding that collects
 height, weight, age and activity level purely to compute local calorie and macro
-targets; none of it is transmitted.
+targets. Without an Anthropic key none of it leaves the device; with a key, the
+goal and health conditions are included in recipe and Home-insight requests.
 
 AI FEATURES AND THE API KEY
-Meal photo analysis, pantry scanning and recipe suggestions call Anthropic's API
+Meal photo analysis, pantry scanning, recipe suggestions and Home insights call Anthropic's API
 using a key the *user* supplies in Settings > AI Features. The app ships with no
 key and there is no key embedded in the binary. To test those features you will
 need to paste an Anthropic key (console.anthropic.com); without one the app shows
