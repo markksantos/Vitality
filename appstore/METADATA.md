@@ -2,9 +2,13 @@
 
 Copy fields verbatim; all are inside their character limits.
 
-> **Not ready to submit.** Two decisions block this listing — see
-> [Before this can be submitted](#before-this-can-be-submitted). Everything else
-> below is done.
+> **Rewritten 2026-09-23 to match the binary.** The app is free to download and
+> sells **one** in-app purchase: Vitality Pro, a $2.99 non-consumable
+> (`com.mark.vitality.pro.lifetime`). The previous version of this file said
+> "In-App Purchase: None" — that predates `ProManager.swift` / `Vitality.storekit`
+> (28 Jul) and would have produced a listing whose paywall requests a product
+> that does not exist. Remaining decisions are under
+> [Before this can be submitted](#before-this-can-be-submitted).
 
 ## App information
 
@@ -18,16 +22,17 @@ Copy fields verbatim; all are inside their character limits.
 | Secondary category | Food & Drink |
 | Content rights | Does not contain, show, or access third-party content |
 | Age rating | 4+ |
-| Price | Free |
+| Price (the app) | Free — **leave the app itself Free**; revenue is the IAP below |
+| In-app purchases | Yes — one non-consumable, $2.99 (see In-App Purchase) |
 | Devices | iPhone |
 | Minimum iOS | **26.1** — see the note below |
 
 ## Promotional text (170 max)
 
 ```
-Logging meals, the pantry, workouts and analytics all work with no account and no key. The optional AI photo scanning uses an Anthropic key you supply and control.
+Log meals, the pantry, workouts and weekly trends with no account and no key. One optional purchase, Vitality Pro, lifts the pantry limit and adds long-range trends.
 ```
-(163 characters)
+(165 characters)
 
 ## Description
 
@@ -46,13 +51,17 @@ Workouts logged next to your food rather than in a separate app, with Apple Heal
 TRENDS WORTH READING
 Averages over a week, a month, or three months. Nutrition trends by calories or by macro. A breakdown of where the calories actually came from.
 
+FREE, AND ONE OPTIONAL UPGRADE
+Everything above is free, with no account and no trial clock. The pantry holds up to 25 items and trends cover the last week.
+Vitality Pro is a single one-time purchase — not a subscription, nothing renews. It lifts the pantry limit and adds the month and three-month trend windows. It is shared with your Family Sharing group and restores on any device signed in to your Apple Account.
+
 OPTIONAL AI, ON YOUR TERMS
 Photo scanning, pantry scanning and recipe suggestions run on Anthropic's API using a key you supply in Settings. It is stored in your device's Keychain, is sent only to Anthropic, and never reaches us. We do not resell it, meter it, or mark it up — you pay Anthropic directly for exactly what you use, and you can remove the key at any time.
 
-Every other feature — logging, the pantry, fitness, analytics — works with no key at all.
+The AI features are not part of Vitality Pro, and every other feature — logging, the pantry, fitness, analytics — works with no key at all.
 
 YOUR DATA STAYS YOURS
-No account. No sign-in. No analytics, no advertising, no third-party SDKs. Everything is stored locally on your iPhone.
+No account. No sign-in. No analytics, no advertising, no third-party SDKs. Everything you log is stored locally on your iPhone. Barcode scans and food searches look the product up in the free Open Food Facts database; only the barcode or search words are sent.
 ```
 
 ## Keywords (100 max, comma-separated, no spaces)
@@ -73,7 +82,34 @@ nutrition,calorie counter,macros,pantry,meal tracker,food diary,protein,fitness,
 
 ## In-App Purchase
 
-**None, deliberately, for now.** See below.
+One product. Create it in App Store Connect → your app → Monetization → In-App
+Purchases before submitting the first build, then attach it to the version
+("In-App Purchases and Subscriptions" section of the 1.0 version page).
+
+| Field | Value |
+|---|---|
+| Type | **Non-Consumable** |
+| Reference name (64 max) | `Vitality Pro (Lifetime)` (23) |
+| Product ID | `com.mark.vitality.pro.lifetime` — must match `ProManager.proProductID` and `Vitality.storekit` exactly |
+| Price | USD **$2.99** (let App Store Connect derive the other storefronts) |
+| Family Sharing | **On** (`familyShareable: true` in `Vitality.storekit`; the paywall promises it. Cannot be turned off once on.) |
+| Availability | All storefronts the app is in |
+| Display name (30 max) | `Vitality Pro` (12) |
+| Description (45 max) | `Unlimited pantry, month and 3-month trends` (42) |
+| Review screenshot | the paywall — `ProPaywallView` (Settings → Vitality Pro → Upgrade to Pro). A capture is in the overnight kit: `iap-review-paywall.png` |
+| Review notes | `Non-consumable. Unlocks unlimited pantry items (free tier: 25) and the Month / 3 Months analytics windows (Week is always free). Paywall: Settings > Vitality Pro > Upgrade to Pro, or add a 26th pantry item, or tap Month in Analytics. Restore Purchase is in the paywall and in Settings.` |
+
+What the binary actually gates (`Services/ProManager.swift`):
+
+- `freePantryItemLimit = 25` → `canAddPantryItem(existingCount:)`
+- `canView(_ range:)` → `isPro || range == .week` (month and 3-month analytics are Pro)
+- AI features and manual target overrides are **not** gated (deliberately — see
+  the doc comment at the top of `ProManager.swift`).
+
+Paywall copy the listing must not contradict (`Services/ProPaywallView.swift`):
+"One-time purchase. Not a subscription, and nothing renews." · "Pro unlocks on
+every device signed in to your Apple Account." · links to
+`nosleeplab.com/vitality/privacy` and `nosleeplab.com/vitality/terms`.
 
 ## App privacy
 
@@ -86,6 +122,17 @@ photos are transmitted to Anthropic's API for analysis when the user has supplie
 their own key and taps to scan. That is a user-initiated transmission to a third
 party the user has their own contract with, not collection by us — but it must be
 described rather than omitted.
+
+**Open Food Facts**: barcode lookups (`BarcodeScannerView.swift` →
+`world.openfoodfacts.org/api/v2/product/<barcode>.json`) and food search
+(`FoodDatabaseService.swift` → `world.openfoodfacts.org/cgi/search.pl`) send the
+barcode or the typed search words, and nothing else, to a public database. Not
+linked to the user, not stored by us, served in real time — it does not change
+the "No data collected" answer, but it is disclosed in the description and the
+privacy policy.
+
+**Purchases**: StoreKit 2 directly, no purchase SDK. Apple handles payment; the app
+stores only a local unlocked flag. Nothing to declare beyond that.
 
 **HealthKit**: the app reads steps and activity. Declare the HealthKit usage and
 make sure the Info.plist strings explain it. Vitality does not write to Health.
@@ -107,7 +154,15 @@ need to paste an Anthropic key (console.anthropic.com); without one the app show
 a clear "not configured" state rather than failing.
 
 Every other feature — meal logging, the pantry, fitness logging, and analytics —
-works fully with no key and no network.
+works fully with no key. Barcode scanning and food search look products up in
+the public Open Food Facts database and need a connection; nothing else does.
+
+IN-APP PURCHASE
+One non-consumable, Vitality Pro (com.mark.vitality.pro.lifetime). It unlocks
+unlimited pantry items (the free tier holds 25) and the Month and 3 Months
+analytics windows (Week is always free). To reach the paywall: Settings >
+Vitality Pro > Upgrade to Pro, or tap Month in Analytics. Restore Purchase is on
+the paywall and in Settings. The AI features are not part of Pro.
 
 The key is stored in the Keychain with kSecAttrAccessibleAfterFirstUnlockThis
 DeviceOnly and is transmitted only to api.anthropic.com.
@@ -159,13 +214,11 @@ installs.
 
 The alternative is a small hosted endpoint holding one key server-side, funded by
 a subscription. `AIEndpoint` in `Services/APIKeyStore.swift` is the seam for it.
-That changes this listing materially (it would gain an IAP and different copy), so
-it should be decided before the App Store Connect record is created rather than
-after.
-
-**No IAP was added in the meantime, on purpose.** With bring-your-own-key there is
-no cost to recover, and bolting a paywall onto features I had not verified would
-risk exactly the failure BabyHQ shipped with — a purchase that unlocks nothing.
+A hosted endpoint would add a *subscription* alongside the existing Pro unlock
+(ProManager's doc comment says so), so it should be decided before the App Store
+Connect record is created rather than after. Shipping 1.0 as it is — free app,
+$2.99 Pro for pantry + trends, AI on the user's own key — is coherent and is what
+this file now describes.
 
 ### 2. The deployment target
 
@@ -190,6 +243,8 @@ field or say so in the app.
 
 - [ ] Rotate the Anthropic key that was previously hardcoded (`sk-ant-…jAAA`)
 - [ ] Apple Developer Program membership
-- [ ] Create the App Store Connect record
-- [ ] Deploy the three nosleeplab pages so the URLs above resolve
+- [ ] Create the App Store Connect record **and the Vitality Pro IAP** (section above)
+- [ ] Run `PurchaseFlowTests` with ⌘U in Xcode — 9 cases skip under headless `xcodebuild`, so the purchase flow has not been executed end to end
+- [ ] Confirm `DEVELOPMENT_TEAM = 8W75GJ2YQ3` is the team paying the $99
+- [ ] Confirm the nosleeplab privacy/support/terms pages mention Pro and Open Food Facts (drafts: overnight kit `legal/Vitality/`)
 - [ ] Decide whether to add a biological sex field to onboarding (section 3 above)
