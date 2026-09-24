@@ -56,7 +56,7 @@ Everything above is free, with no account and no trial clock. The pantry holds u
 Vitality Pro is a single one-time purchase — not a subscription, nothing renews. It lifts the pantry limit and adds the month and three-month trend windows. It is shared with your Family Sharing group and restores on any device signed in to your Apple Account.
 
 OPTIONAL AI, ON YOUR TERMS
-Photo scanning, pantry scanning, recipe suggestions and the Home-screen insights run on Anthropic's API using a key you supply in Settings. With a key set, the insights refresh on their own once two meals are logged in a day, and they use your recent meals, workouts, goal and any health conditions you entered. It is stored in your device's Keychain, is sent only to Anthropic, and never reaches us. We do not resell it, meter it, or mark it up — you pay Anthropic directly for exactly what you use, and you can remove the key at any time.
+Photo scanning, pantry scanning, recipe suggestions and the Home-screen insights run on Anthropic's API using a key you supply in Settings. Each sends only when you use it: insights go out only when you tap Get insights, and a line beside the button says what is sent (your last 7 meals and workouts, your goal and any health conditions you entered). It is stored in your device's Keychain, is sent only to Anthropic, and never reaches us. We do not resell it, meter it, or mark it up — you pay Anthropic directly for exactly what you use, and you can remove the key at any time.
 
 The AI features are not part of Vitality Pro, and every other feature — logging, the pantry, fitness, analytics — works with no key at all.
 
@@ -113,43 +113,82 @@ every device signed in to your Apple Account." · links to
 
 ## App privacy
 
-Data collection: **none**. Answer "No" to "Do you or your third-party partners
-collect data from this app?" — no analytics, no accounts, no advertising
-identifier, and no server of ours.
+Answers for App Store Connect > App Privacy, per Mark's ruling of 2026-09-24
+17:51: declare what goes to Anthropic, for App Functionality, no tracking.
+Checked against branch `appstore/privacy-fixes` (inner repo `Vitality/`), where
+Home no longer sends anything without a tap. Paths are under `Vitality/Vitality/`.
 
-Declare the Anthropic call honestly in review notes (below). **Corrected
-2026-09-23 against the code:** it is not only "photos when the user taps to scan".
-With a user-supplied key:
-- meal and pantry photos are sent when the user scans (`AIService.analyzeMealPhoto`);
-- recipe suggestions send the profile's goal and self-reported health conditions
-  (`AIService.swift:140-153`, `:221`);
-- **Home insights are sent automatically, without a tap**, whenever Home loads with
-  2+ meals logged today (`HomeDashboardView.swift:313-324` → `generateInsights`,
-  `AIService.swift:276-297`): recent meal totals, recent workouts, goal and health
-  conditions.
+**What actually leaves the device, and when** (all to `api.anthropic.com`, only
+with a key the user pasted in Settings; `AIService.makeAPICall` throws before any
+network call when there is no key):
 
-> **DECISION FOR MARK — the App Privacy answer.** "No, we do not collect data" is
-> defensible only on the reading that a user-keyed call to a provider the user
-> contracts with is not collection by the developer. Apple's definition turns on
-> data leaving the device to a third party. The cautious answer is: *Health &
-> Fitness*, *Photos*, *Other User Content* — collected, **not** linked to the user,
-> **not** used for tracking, purpose App Functionality. Pick one before creating the
-> record; the privacy-policy draft (overnight kit `legal/Vitality/privacy.html`)
-> describes the flows either way.
+| Trigger (user action) | What is sent | Code |
+|---|---|---|
+| Takes or picks a meal photo in the scanner | the photo | `Views/Meals/MealsView.swift:938` → `AIService.analyzeMealPhoto` |
+| Scans a pantry shelf | the photo + which shelf (fridge/freezer/pantry) | `Views/Pantry/PantryView.swift:769` → `AIService.analyzePantryPhoto` |
+| Opens Recipe Ideas, or taps refresh / Try Again | pantry item names + quantities, secondary goals, health conditions | `Views/Recipes/RecipeSuggestionsView.swift:232` → `AIService.suggestRecipes` (`:144-153`) |
+| Taps **Get insights** on Home | last 7 meals (type, kcal, protein, sodium), last 7 workouts (type, minutes), main goal, health conditions | `Views/Home/HomeDashboardView.swift` `requestInsights` → `HomeInsightsModel.request` → `AIService.generateInsights` (`:276-332`) |
 
-**Open Food Facts**: barcode lookups (`BarcodeScannerView.swift` →
-`world.openfoodfacts.org/api/v2/product/<barcode>.json`) and food search
-(`FoodDatabaseService.swift` → `world.openfoodfacts.org/cgi/search.pl`) send the
-barcode or the typed search words, and nothing else, to a public database. Not
-linked to the user, not stored by us, served in real time — it does not change
-the "No data collected" answer, but it is disclosed in the description and the
-privacy policy.
+Each request carries the user's own key in `x-api-key` (`AIService.swift:381`).
+No name, email, device ID or any Vitality identifier is sent: the app has no
+account and no server. Apple Health values are never sent (they are read into
+`HealthKitService` and only displayed; no prompt uses them).
 
-**Purchases**: StoreKit 2 directly, no purchase SDK. Apple handles payment; the app
-stores only a local unlocked flag. Nothing to declare beyond that.
+### Field by field
 
-**HealthKit**: the app reads steps and activity. Declare the HealthKit usage and
-make sure the Info.plist strings explain it. Vitality does not write to Health.
+**Do you or your third-party partners collect data from this app?** Yes.
+
+| Data type | Collected? | Purposes | Linked to the user? | Used for tracking? |
+|---|---|---|---|---|
+| Health & Fitness › **Health** | Yes: self-reported health conditions, goals, per-meal nutrition totals | App Functionality only | **Yes** (see below) | No |
+| Health & Fitness › **Fitness** | Yes: logged workouts (type, minutes) | App Functionality only | **Yes** | No |
+| User Content › **Photos or Videos** | Yes: meal and pantry photos the user scans | App Functionality only | **Yes** | No |
+| User Content › **Other User Content** | Yes: pantry item names and quantities | App Functionality only | **Yes** | No |
+| Contact Info, Location, Sensitive Info, Contacts, Browsing History, Identifiers, Purchases, Usage Data, Diagnostics, Financial Info, Other Data | No | — | — | — |
+| Search History | No (see Open Food Facts below) | — | — | — |
+
+**Linked to the user: Yes, not the "Not Linked" the brief expected.** Vitality
+itself has no account, but every request is authenticated with the user's own
+Anthropic API key, and Anthropic ties that key to the Anthropic account that
+owns it (name, email, billing). Apple counts data as linked when it reaches a
+third party with a direct identifier attached, and the key is one. "Not linked"
+only holds on the reading that the user's own key makes Anthropic the user's
+provider rather than ours, and that is the same reading the "collect data?"
+answer above rejects. Answer both questions the same way.
+
+**Tracking: No.** No advertising identifier, no App Tracking Transparency prompt,
+no analytics/ads/attribution SDKs (no Swift packages at all), and nothing is
+shared with data brokers or combined with other companies' data.
+
+**Purpose: App Functionality only.** Each request produces the thing the user
+just asked for (a meal breakdown, pantry items, recipes, insights) and nothing
+is kept by us for analytics, personalisation of other content or advertising.
+
+**Not collected, and why:**
+- **Apple Health** (steps, active energy, exercise minutes, walking + running
+  distance, heart rate): read on device, displayed, never stored or transmitted
+  (`Services/HealthKitService.swift`; values only used by `HomeDashboardView` and
+  `FitnessView`). The request is now exactly those five read types, no write.
+- **Open Food Facts**: barcode lookups (`Services/BarcodeScannerView.swift:306`,
+  `Services/FoodDatabaseService.swift:88`) and food search
+  (`FoodDatabaseService.swift:146`) send only the barcode or the typed words to
+  a public database, in real time, with no identifier. Not declared as Search
+  History on Apple's real-time-servicing exception; disclosed in the description
+  and the privacy policy. If Mark wants the most cautious label, add Search
+  History › App Functionality › Not linked › No tracking.
+- **Purchases**: StoreKit 2 directly; the app keeps only a local unlocked flag.
+- Everything else the user logs stays in SwiftData on the device. Settings >
+  Data Management exports it as JSON; Settings > Clear All Data deletes all of
+  it, the profile and health conditions included.
+
+**Privacy policy URL** must describe the same flows before submission: the live
+`nosleeplab.com/vitality/privacy` page predates the tap-to-send change (drafts:
+overnight kit `legal/Vitality/`). The in-app Privacy Policy screen
+(`Services/SettingsView.swift`, `PrivacyPolicyView`) already does.
+
+**HealthKit capability**: declare it; `NSHealthShareUsageDescription` explains
+the read ("steps and activity"). Vitality does not write to Health and has no
+`NSHealthUpdateUsageDescription`.
 
 Export compliance: no encryption beyond what iOS provides — answer "No".
 
@@ -159,7 +198,9 @@ Export compliance: no encryption beyond what iOS provides — answer "No".
 No account, no sign-in. The app opens into a five-step onboarding that collects
 height, weight, age and activity level purely to compute local calorie and macro
 targets. Without an Anthropic key none of it leaves the device; with a key, the
-goal and health conditions are included in recipe and Home-insight requests.
+goal and health conditions are included in recipe and Home-insight requests,
+which are sent only when the user opens Recipe Ideas or taps Get insights. A
+line beside each says what is sent to Anthropic.
 
 AI FEATURES AND THE API KEY
 Meal photo analysis, pantry scanning, recipe suggestions and Home insights call Anthropic's API
