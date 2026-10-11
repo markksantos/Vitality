@@ -187,3 +187,26 @@ call site and in `appstore/METADATA.md` rather than left silent.
   not updated. Deliberate — the UI is built on Liquid Glass — but it should be a
   launch decision rather than a default.
 - **Apple Developer Program membership.**
+
+## 2026-10-11 — Xcode 27 launch-prep pass
+
+Verified on Xcode 27.0 GM (27A266a), iOS 27.0 simulator (iPhone 17 Pro Max), on
+`vitality-app` main: 58 Swift Testing tests and 8 UI tests pass (the 9
+`PurchaseFlowTests` still need ⌘U in Xcode), Release device build compiles
+unsigned, the app launches to onboarding with no crash, and Home, Meals, Pantry,
+Fitness, Analytics and Settings render correctly in Dark Mode. The Release
+binary has no debug hooks and no key; its only `sk-ant-` string is the key-entry
+hint text.
+
+Fixed:
+- **Privacy manifest** (`vitality-app` 287e102). It still said Vitality collects
+  nothing, while the App Privacy answers above declare Health, Fitness, Photos or
+  Videos and Other User Content. It now declares the same four, linked, App
+  Functionality, no tracking, so the privacy report matches the label.
+- **Public privacy policy.** `nosleeplab.com/vitality/privacy` (July 28) said only
+  scans send anything; rewritten to list every request, Open Food Facts, the five
+  Health types and Export / Clear All Data (nosleeplab PR #2).
+
+Screenshots: the five 6.9" frames from July are still accurate (the Home frame
+shows the rings, quick actions and meals; the insights card it does not show is
+the part that changed), so they stay.
